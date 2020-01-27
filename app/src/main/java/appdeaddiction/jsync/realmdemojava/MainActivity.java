@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import io.realm.RealmObject;
+import io.realm.RealmResults;
 
 import android.os.Bundle;
 import android.view.View;
@@ -87,8 +88,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void update() {
         String id = edtId.getText().toString();
+        final String name = edtName.getText().toString();
+        final String email = edtEmail.getText().toString();
 
-        if(checkEmpty(id)){
+        if(checkEmpty(id, name, email)){
             toast("Fields cannot be empty!");
             return;
         }
@@ -97,7 +100,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
+                PersonModel personModel = new PersonModel();
+                personModel.id = idd;
+                personModel.name = name;
+                personModel.email = email;
 
+                realm.insertOrUpdate(personModel);
             }
         });
 
@@ -128,7 +136,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void delete() {
+        String id = edtId.getText().toString();
 
+        if(checkEmpty(id)){
+            toast("Insert id first!");
+            return;
+        }
+
+        final Integer idd = Integer.parseInt(id);
+        mRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                RealmResults<PersonModel> realmResults = realm.where(PersonModel.class).equalTo("id", idd).findAll();
+                realmResults.deleteAllFromRealm();
+            }
+        });
     }
 
     boolean checkEmpty(Object... objects){
