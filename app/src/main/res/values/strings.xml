@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">RealmDemoJava</string>
+    <string name="id">Id</string>
+    <string name="name">Name</string>
+    <string name="email">Email</string>
+    <string name="insert">Insert</string>
+    <string name="update">Update</string>
+    <string name="delete">Delete</string>
+    <string name="fetch">Fetch</string>
+</resources>
