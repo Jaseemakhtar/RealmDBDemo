@@ -3,7 +3,7 @@ package appdeaddiction.jsync.realmdemojava;
 import androidx.appcompat.app.AppCompatActivity;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
-import io.realm.RealmObject;
+import io.realm.RealmQuery;
 import io.realm.RealmResults;
 
 import android.os.Bundle;
@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initViews();
+        Realm.init(getApplicationContext());
         RealmConfiguration realmConfiguration = new RealmConfiguration.Builder().name("test.db").schemaVersion(1).deleteRealmIfMigrationNeeded().build();
         mRealm = Realm.getInstance(realmConfiguration);
     }
@@ -80,8 +81,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                PersonModel personModel = realm.where(PersonModel.class).equalTo("id", idd).findFirst();
-                txtResult.setText(String.format(Locale.US, "ID: %d \n Name: %s \n Email: %s", personModel.id, personModel.name, personModel.email));
+                RealmQuery<PersonModel> query = realm.where(PersonModel.class).equalTo("id", idd);
+                PersonModel personModel = query.findFirst();
+                if(query.count() > 0)
+                    txtResult.setText(String.format(Locale.US, "ID: %d \n Name: %s \n Email: %s", personModel.id, personModel.name, personModel.email));
+                else
+                    toast("Specified Id doesn't exists!");
             }
         });
     }
@@ -91,21 +96,35 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         final String name = edtName.getText().toString();
         final String email = edtEmail.getText().toString();
 
-        if(checkEmpty(id, name, email)){
-            toast("Fields cannot be empty!");
+        if(checkEmpty(id)){
+            toast("Id cannot be empty!");
             return;
         }
 
-        final Number idd = Integer.parseInt(id);
+        final Integer idd = Integer.parseInt(id);
         mRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                PersonModel personModel = new PersonModel();
-                personModel.id = idd;
-                personModel.name = name;
-                personModel.email = email;
+                RealmQuery<PersonModel> query = realm.where(PersonModel.class).equalTo("id", idd);
+                PersonModel personModel = query.findFirst();
+                if(query.count() > 0) {
+                    PersonModel personModel1 = new PersonModel();
+                    personModel1.id = idd;
 
-                realm.insertOrUpdate(personModel);
+                    if(checkEmpty(name))
+                        personModel1.name = personModel.name;
+                    else
+                        personModel1.name = name;
+
+                    if(checkEmpty(email))
+                        personModel1.email = personModel.email;
+                    else
+                        personModel1.email = email;
+
+                    realm.insertOrUpdate(personModel1);
+                }else{
+                    toast("Specified Id doesn't exists!");
+                }
             }
         });
 
@@ -121,7 +140,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return;
         }
 
-        final Number idd = Integer.parseInt(id);
+        final Integer idd = Integer.parseInt(id);
         mRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
@@ -129,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 p.id = idd;
                 p.name = name;
                 p.email = email;
+
 
                 realm.insert(p);
             }
@@ -139,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String id = edtId.getText().toString();
 
         if(checkEmpty(id)){
-            toast("Insert id first!");
+            toast("Id cannot be empty!");
             return;
         }
 
@@ -148,7 +168,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void execute(Realm realm) {
                 RealmResults<PersonModel> realmResults = realm.where(PersonModel.class).equalTo("id", idd).findAll();
-                realmResults.deleteAllFromRealm();
+                if(realmResults.size() > 0)
+                    realmResults.deleteAllFromRealm();
+                else
+                    toast("Specified Id doesn't exists!");
             }
         });
     }

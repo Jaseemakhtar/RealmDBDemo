@@ -7,7 +7,7 @@ import io.realm.annotations.Required;
 public class PersonModel extends RealmObject {
     @PrimaryKey
     @Required
-    public Number id;
+    public Integer id;
 
     @Required
     public String name;
