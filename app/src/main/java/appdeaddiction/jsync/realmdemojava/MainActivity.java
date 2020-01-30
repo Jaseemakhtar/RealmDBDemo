@@ -1,6 +1,9 @@
 package appdeaddiction.jsync.realmdemojava;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import io.realm.OrderedCollectionChangeSet;
+import io.realm.OrderedRealmCollectionChangeListener;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import io.realm.RealmQuery;
@@ -11,14 +14,15 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    private Button btnInsert, btnUpdate, btnDelete, btnFetch;
+    private Button btnInsert, btnUpdate, btnDelete, btnFetch, btnFetchAll;
     private TextView txtResult;
     private TextView edtId, edtName, edtEmail;
     private Realm mRealm;
+    private RealmResults<PersonModel> allPersons;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,8 +30,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         initViews();
         Realm.init(getApplicationContext());
+
         RealmConfiguration realmConfiguration = new RealmConfiguration.Builder().name("test.db").schemaVersion(1).deleteRealmIfMigrationNeeded().build();
         mRealm = Realm.getInstance(realmConfiguration);
+        allPersons = mRealm.where(PersonModel.class).findAllSorted("id");
+        allPersons.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults<PersonModel>>() {
+            @Override
+            public void onChange(RealmResults<PersonModel> personModels, OrderedCollectionChangeSet changeSet) {
+                if(changeSet.getInsertions().length > 0)
+                    toast("Inserted!");
+                else if(changeSet.getChanges().length > 0)
+                    toast("Updated!");
+            }
+        });
+
     }
 
     private void initViews(){
@@ -35,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnInsert = findViewById(R.id.btnInsert);
         btnUpdate = findViewById(R.id.btnUpdate);
         btnFetch = findViewById(R.id.btnFetch);
+        btnFetchAll = findViewById(R.id.btnFetchAll);
 
         edtId = findViewById(R.id.edtID);
         edtName = findViewById(R.id.edtName);
@@ -46,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnInsert.setOnClickListener(this);
         btnDelete.setOnClickListener(this);
         btnFetch.setOnClickListener(this);
+        btnFetchAll.setOnClickListener(this);
     }
 
     @Override
@@ -65,6 +83,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             case R.id.btnFetch:
                 fetch();
+                break;
+
+            case R.id.btnFetchAll:
+
+                if(allPersons.size() > 0) {
+                    txtResult.setText("");
+                    for (PersonModel model : allPersons) {
+                        String old = txtResult.getText().toString();
+                        txtResult.setText(old + "Id: " + model.id + " Name: " + model.name + " Email: " + model.email + "\n");
+                    }
+                }else
+                    toast("DB Empty!");
+
                 break;
         }
     }
